@@ -15,11 +15,20 @@ _start:
     li t3, 0x00001800               # Mask for MPP to set previous privilege mode to user mode (00)
     and t2, t2, t3                  # Clear MPP field in mstatus
     csrw mstatus, t2                # Write updated mstatus back
-
     mret                            # Return to user mode and start execution at user_systemcalls
 
 exception_handler:
+
+    #here we need to save all the registers that might be used in user mode 
     # Save registers needed for handling the exception
+    sw ra 0(x0)
+    sw t0 4(x0)
+    sw t1 8(x0)
+    sw t2 12(x0)
+    sw t3 16(x0)
+    sw t4 20(x0)
+    sw t5 24(x0)
+    sw t5 2056(x0)
     csrr t0, mepc     # Save mepc (Program Counter) into t0
     csrr t1, mcause   # Save mcause (Cause of the exception) into t1
     li t2, 8          # Load immediate value 8 into t2 (Environment call exception code)
@@ -43,7 +52,7 @@ handle_ecall:
     beq a7, t3, print_string
 
     # Restore registers and return from exception
-    mret              # Return from machine mode to previous mode
+    j ret              # Return from machine mode to previous mode
 
 print_character:
     # Print character to display_data memory-mapped register
@@ -51,7 +60,7 @@ print_character:
     sw a0, 0(t4)      # Write character to display_data register
 
     # Restore registers and return from exception
-    mret              # Return from machine mode to previous mode
+    j ret              # Return from machine mode to previous mode
 
 print_string:
     # Print null-terminated string to display
@@ -66,4 +75,14 @@ print_string_loop:
 
 end_print_string:
     # Restore registers and return from exception
+    j ret
+
+ret:
+    lw ra 0(x0)
+    lw t0 4(x0)
+    lw t1 8(x0)
+    lw t2 12(x0)
+    lw t3 16(x0)
+    lw t4 20(x0)
+    lw t5 24(x0)
     mret
